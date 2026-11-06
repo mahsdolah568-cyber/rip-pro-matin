@@ -1,0 +1,690 @@
+
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RIP PRO - Matin</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;background:#0b0b10;color:#fff;
+ font-family:Arial,sans-serif;
+}
+header{
+ padding:15px;background:#15151e;
+ border-bottom:1px solid #292934;
+ display:flex;justify-content:space-between;
+ align-items:center;
+}
+.logo{
+ font-size:25px;font-weight:900;
+ color:#b66aff;letter-spacing:2px;
+}
+small{color:#999}
+main{max-width:1000px;margin:auto;padding:12px}
+button,select,input,textarea{
+ background:#24242f;color:white;
+ border:1px solid #393947;
+ border-radius:9px;padding:10px;
+}
+button{cursor:pointer;font-weight:bold}
+button:active{background:#773bd0}
+.tools{
+ display:flex;flex-wrap:wrap;gap:5px;
+ padding:10px;background:#17171f;
+ border-radius:12px;
+}
+.workspace{
+ margin-top:12px;background:#050507;
+ border-radius:12px;padding:10px;
+ overflow:hidden;
+}
+canvas{
+ width:100%;height:auto;display:block;
+ background:#222;
+ touch-action:none;
+}
+.panel{
+ margin-top:12px;padding:13px;
+ background:#17171f;border:1px solid #292934;
+ border-radius:12px;
+}
+h3{margin:5px 0 13px;font-size:16px}
+label{
+ display:block;color:#aaa;font-size:12px;
+ margin-top:12px;
+}
+input[type=range]{width:100%;padding:0}
+input[type=color]{height:38px;width:50px}
+input[type=text]{width:100%;margin-top:8px}
+.row{
+ display:flex;gap:6px;flex-wrap:wrap;
+ align-items:center;
+}
+.row>*{flex:1}
+.layers{
+ display:flex;flex-direction:column;gap:5px;
+ margin-top:10px;
+}
+.layer{
+ display:flex;align-items:center;gap:8px;
+ background:#252530;padding:10px;
+ border-radius:8px;
+}
+.layer.active{
+ border:1px solid #b66aff;
+ background:#342341;
+}
+.layer span{flex:1;overflow:hidden}
+.layer button{padding:6px}
+#status{color:#b66aff;font-size:12px;margin-top:8px}
+footer{text-align:center;padding:20px;color:#666}
+</style>
+</head>
+
+<body>
+
+<header>
+ <div>
+  <div class="logo">RIP PRO</div>
+  <small>Gaming Thumbnail Studio</small>
+ </div>
+ <small>MATIN</small>
+</header>
+
+<main>
+
+<div class="tools">
+ <button onclick="document.getElementById('imageFile').click()">＋ عکس</button>
+ <input id="imageFile" type="file" accept="image/*" hidden>
+
+ <button onclick="addText()">＋ متن</button>
+ <button onclick="undo()">↶</button>
+ <button onclick="redo()">↷</button>
+ <button onclick="exportPNG()">⬇ PNG</button>
+</div>
+
+<div class="workspace">
+ <canvas id="canvas" width="1280" height="720"></canvas>
+</div>
+
+<div class="panel">
+ <h3>📐 اندازه پروژه</h3>
+ <div class="row">
+  <button onclick="resizeProject(1280,720)">YouTube 16:9</button>
+  <button onclick="resizeProject(1080,1920)">Shorts 9:16</button>
+  <button onclick="resizeProject(1080,1080)">Square 1:1</button>
+ </div>
+</div>
+
+<div class="panel">
+ <h3>🗂️ لایه‌ها</h3>
+ <div class="row">
+  <button onclick="moveLayer(-1)">↑ بالا</button>
+  <button onclick="moveLayer(1)">↓ پایین</button>
+  <button onclick="deleteLayer()">🗑 حذف</button>
+  <button onclick="toggleLayer()">◉ نمایش</button>
+ </div>
+ <div id="layers" class="layers"></div>
+</div>
+
+<div class="panel">
+ <h3>✍️ متن و استایل</h3>
+
+ <input id="textValue" type="text" placeholder="متن خود را بنویس">
+
+ <div class="row">
+  <div>
+   <label>رنگ متن</label>
+   <input id="textColor" type="color" value="#ffffff">
+  </div>
+  <div>
+   <label>رنگ دورخط</label>
+   <input id="strokeColor" type="color" value="#000000">
+  </div>
+ </div>
+
+ <label>اندازه متن</label>
+ <input id="textSize" type="range" min="20" max="180" value="80">
+
+ <label>ضخامت دورخط</label>
+ <input id="strokeSize" type="range" min="0" max="30" value="8">
+
+ <div class="row">
+  <button onclick="applyText()">اعمال متن</button>
+  <button onclick="centerLayer()">مرکز</button>
+ </div>
+</div>
+
+<div class="panel">
+ <h3>✨ افکت‌ها</h3>
+
+ <label>Glow / درخشش</label>
+ <input id="glow" type="range" min="0" max="50" value="0">
+
+ <label>سایه</label>
+ <input id="shadow" type="range" min="0" max="50" value="0">
+
+ <label>شفافیت لایه</label>
+ <input id="opacity" type="range" min="0" max="100" value="100">
+
+ <label>حالت ترکیب</label>
+ <select id="blend">
+  <option value="source-over">Normal</option>
+  <option value="screen">Screen</option>
+  <option value="multiply">Multiply</option>
+  <option value="overlay">Overlay</option>
+  <option value="lighter">Add</option>
+ </select>
+
+ <button onclick="applyEffects()">اعمال افکت</button>
+</div>
+
+<div class="panel">
+ <h3>🎨 تنظیم رنگ</h3>
+
+ <label>روشنایی</label>
+ <input id="brightness" type="range" min="0" max="200" value="100">
+
+ <label>کنتراست</label>
+ <input id="contrast" type="range" min="0" max="200" value="100">
+
+ <label>اشباع</label>
+ <input id="saturation" type="range" min="0" max="200" value="100">
+
+ <button onclick="applyFilters()">اعمال رنگ</button>
+ <button onclick="resetFilters()">بازنشانی رنگ</button>
+</div>
+
+<div id="status">RIP PRO آماده است</div>
+
+<footer>RIP PRO • Made by Matin</footer>
+
+</main>
+
+<script>
+const canvas=document.getElementById("canvas");
+const ctx=canvas.getContext("2d");
+
+let layers=[];
+let selected=-1;
+let history=[];
+let future=[];
+let dragging=false;
+let lastX=0,lastY=0;
+
+const $=id=>document.getElementById(id);
+
+function uid(){
+ return Date.now()+Math.random();
+}
+
+function current(){
+ return layers[selected];
+}
+
+function saveHistory(){
+ try{
+  history.push(JSON.stringify({
+   width:canvas.width,
+   height:canvas.height,
+   layers
+  }));
+
+  if(history.length>20)history.shift();
+
+  future=[];
+ }catch(e){}
+}
+
+function restore(data){
+ const state=JSON.parse(data);
+
+ canvas.width=state.width;
+ canvas.height=state.height;
+
+ layers=state.layers;
+ selected=-1;
+
+ renderLayers();
+ draw();
+}
+
+function undo(){
+ if(!history.length)return;
+
+ future.push(JSON.stringify({
+  width:canvas.width,
+  height:canvas.height,
+  layers
+ }));
+
+ restore(history.pop());
+}
+
+function redo(){
+ if(!future.length)return;
+
+ history.push(JSON.stringify({
+  width:canvas.width,
+  height:canvas.height,
+  layers
+ }));
+
+ restore(future.pop());
+}
+
+function addLayer(layer){
+ saveHistory();
+
+ layers.push(layer);
+ selected=layers.length-1;
+
+ renderLayers();
+ draw();
+}
+
+function renderLayers(){
+ const box=$("layers");
+ box.innerHTML="";
+
+ layers.forEach((layer,i)=>{
+  const div=document.createElement("div");
+
+  div.className="layer"+(i===selected?" active":"");
+
+  const name=document.createElement("span");
+  name.textContent=layer.name;
+
+  const button=document.createElement("button");
+  button.textContent=layer.visible?"◉":"○";
+
+  button.onclick=e=>{
+   e.stopPropagation();
+   saveHistory();
+   layer.visible=!layer.visible;
+   renderLayers();
+   draw();
+  };
+
+  div.append(name,button);
+
+  div.onclick=()=>{
+   selected=i;
+   renderLayers();
+   loadSettings();
+  };
+
+  box.appendChild(div);
+ });
+}
+
+function draw(){
+ ctx.clearRect(0,0,canvas.width,canvas.height);
+
+ ctx.fillStyle="#222";
+ ctx.fillRect(0,0,canvas.width,canvas.height);
+
+ layers.forEach(layer=>{
+  if(!layer.visible)return;
+
+  ctx.save();
+
+  ctx.globalAlpha=layer.opacity/100;
+  ctx.globalCompositeOperation=layer.blend||"source-over";
+
+  ctx.filter=
+   `brightness(${layer.brightness||100}%)
+    contrast(${layer.contrast||100}%)
+    saturate(${layer.saturation||100}%)`;
+
+  ctx.translate(layer.x,layer.y);
+  ctx.rotate((layer.rotation||0)*Math.PI/180);
+
+  ctx.shadowColor=layer.glowColor||"#a855f7";
+  ctx.shadowBlur=layer.glow||0;
+
+  if(layer.type==="image"){
+   ctx.drawImage(
+    layer.image,
+    -layer.width/2,
+    -layer.height/2,
+    layer.width,
+    layer.height
+   );
+  }
+
+  if(layer.type==="text"){
+   ctx.font=`bold ${layer.size}px Arial`;
+   ctx.textAlign="center";
+   ctx.textBaseline="middle";
+   ctx.lineJoin="round";
+
+   ctx.shadowBlur=layer.shadow||0;
+
+   if(layer.strokeSize>0){
+    ctx.lineWidth=layer.strokeSize;
+    ctx.strokeStyle=layer.strokeColor;
+    ctx.strokeText(layer.text,0,0);
+   }
+
+   ctx.fillStyle=layer.color;
+   ctx.fillText(layer.text,0,0);
+  }
+
+  ctx.restore();
+ });
+
+ ctx.filter="none";
+ ctx.globalAlpha=1;
+}
+
+$("imageFile").onchange=e=>{
+ const file=e.target.files[0];
+ if(!file)return;
+
+ const reader=new FileReader();
+
+ reader.onload=ev=>{
+  const image=new Image();
+
+  image.onload=()=>{
+   const scale=Math.min(
+    canvas.width/image.width,
+    canvas.height/image.height
+   );
+
+   addLayer({
+    id:uid(),
+    name:file.name,
+    type:"image",
+    image,
+    width:image.width*scale,
+    height:image.height*scale,
+    x:canvas.width/2,
+    y:canvas.height/2,
+    rotation:0,
+    opacity:100,
+    glow:0,
+    shadow:0,
+    blend:"source-over",
+    brightness:100,
+    contrast:100,
+    saturation:100,
+    visible:true
+   });
+  };
+
+  image.src=ev.target.result;
+ };
+
+ reader.readAsDataURL(file);
+ e.target.value="";
+};
+
+function addText(){
+ const text=$("textValue").value.trim();
+
+ if(!text){
+  alert("اول متن رو بنویس");
+  return;
+ }
+
+ addLayer({
+  id:uid(),
+  name:"متن: "+text,
+  type:"text",
+  text,
+  size:+$("textSize").value,
+  color:$("textColor").value,
+  strokeColor:$("strokeColor").value,
+  strokeSize:+$("strokeSize").value,
+  x:canvas.width/2,
+  y:canvas.height/2,
+  rotation:0,
+  opacity:100,
+  glow:0,
+  shadow:0,
+  blend:"source-over",
+  brightness:100,
+  contrast:100,
+  saturation:100,
+  visible:true
+ });
+}
+
+function applyText(){
+ const layer=current();
+ if(!layer||layer.type!=="text")return;
+
+ saveHistory();
+
+ layer.text=$("textValue").value;
+ layer.size=+$("textSize").value;
+ layer.color=$("textColor").value;
+ layer.strokeColor=$("strokeColor").value;
+ layer.strokeSize=+$("strokeSize").value;
+
+ layer.name="متن: "+layer.text;
+
+ renderLayers();
+ draw();
+}
+
+function applyEffects(){
+ const layer=current();
+ if(!layer)return;
+
+ saveHistory();
+
+ layer.glow=+$("glow").value;
+ layer.shadow=+$("shadow").value;
+ layer.opacity=+$("opacity").value;
+ layer.blend=$("blend").value;
+
+ draw();
+}
+
+function applyFilters(){
+ const layer=current();
+ if(!layer)return;
+
+ saveHistory();
+
+ layer.brightness=+$("brightness").value;
+ layer.contrast=+$("contrast").value;
+ layer.saturation=+$("saturation").value;
+
+ draw();
+}
+
+function resetFilters(){
+ const layer=current();
+ if(!layer)return;
+
+ saveHistory();
+
+ layer.brightness=100;
+ layer.contrast=100;
+ layer.saturation=100;
+
+ $("brightness").value=100;
+ $("contrast").value=100;
+ $("saturation").value=100;
+
+ draw();
+}
+
+function loadSettings(){
+ const layer=current();
+ if(!layer)return;
+
+ $("opacity").value=layer.opacity;
+ $("glow").value=layer.glow;
+ $("shadow").value=layer.shadow;
+ $("blend").value=layer.blend;
+
+ $("brightness").value=layer.brightness;
+ $("contrast").value=layer.contrast;
+ $("saturation").value=layer.saturation;
+
+ if(layer.type==="text"){
+  $("textValue").value=layer.text;
+  $("textSize").value=layer.size;
+  $("textColor").value=layer.color;
+  $("strokeColor").value=layer.strokeColor;
+  $("strokeSize").value=layer.strokeSize;
+ }
+}
+
+function moveLayer(direction){
+ if(selected<0)return;
+
+ const target=selected+direction;
+
+ if(target<0||target>=layers.length)return;
+
+ saveHistory();
+
+ const temp=layers[selected];
+ layers[selected]=layers[target];
+ layers[target]=temp;
+
+ selected=target;
+
+ renderLayers();
+ draw();
+}
+
+function deleteLayer(){
+ if(selected<0)return;
+
+ saveHistory();
+
+ layers.splice(selected,1);
+ selected=-1;
+
+ renderLayers();
+ draw();
+}
+
+function toggleLayer(){
+ const layer=current();
+ if(!layer)return;
+
+ saveHistory();
+
+ layer.visible=!layer.visible;
+
+ renderLayers();
+ draw();
+}
+
+function centerLayer(){
+ const layer=current();
+ if(!layer)return;
+
+ saveHistory();
+
+ layer.x=canvas.width/2;
+ layer.y=canvas.height/2;
+
+ draw();
+}
+
+function resizeProject(w,h){
+ saveHistory();
+
+ canvas.width=w;
+ canvas.height=h;
+
+ layers.forEach(layer=>{
+  layer.x=w/2;
+  layer.y=h/2;
+ });
+
+ draw();
+}
+
+function exportPNG(){
+ const link=document.createElement("a");
+
+ link.download="RIP-PRO-Matin.png";
+ link.href=canvas.toDataURL("image/png");
+
+ link.click();
+
+ $("status").textContent="خروجی PNG آماده شد";
+}
+
+canvas.addEventListener("pointerdown",e=>{
+ const rect=canvas.getBoundingClientRect();
+
+ const x=(e.clientX-rect.left)*canvas.width/rect.width;
+ const y=(e.clientY-rect.top)*canvas.height/rect.height;
+
+ for(let i=layers.length-1;i>=0;i--){
+  const layer=layers[i];
+
+  if(!layer.visible)continue;
+
+  if(
+   x>=layer.x-layer.width/2&&
+   x<=layer.x+layer.width/2&&
+   y>=layer.y-layer.height/2&&
+   y<=layer.y+layer.height/2
+  ){
+   selected=i;
+   dragging=true;
+
+   lastX=x;
+   lastY=y;
+
+   canvas.setPointerCapture(e.pointerId);
+
+   renderLayers();
+   loadSettings();
+
+   return;
+  }
+ }
+});
+
+canvas.addEventListener("pointermove",e=>{
+ if(!dragging)return;
+
+ const rect=canvas.getBoundingClientRect();
+
+ const x=(e.clientX-rect.left)*canvas.width/rect.width;
+ const y=(e.clientY-rect.top)*canvas.height/rect.height;
+
+ const layer=current();
+ if(!layer)return;
+
+ layer.x+=x-lastX;
+ layer.y+=y-lastY;
+
+ lastX=x;
+ lastY=y;
+
+ draw();
+});
+
+canvas.addEventListener("pointerup",()=>{
+ if(dragging){
+  dragging=false;
+  saveHistory();
+ }
+});
+
+canvas.addEventListener("pointercancel",()=>{
+ dragging=false;
+});
+
+draw();
+</script>
+
+</body>
+</html>
